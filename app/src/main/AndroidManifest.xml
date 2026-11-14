@@ -22,7 +22,8 @@
     <application
         android:name=".SokusekiApp"
         android:allowBackup="false"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/ic_launcher_mudita"
+        android:roundIcon="@drawable/ic_launcher_mudita"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.Sokuseki"
