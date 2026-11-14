@@ -14,7 +14,9 @@ class TrackingAlarmReceiver : BroadcastReceiver() {
         try {
             TrackingService.deliver(context, TrackingService.ACTION_TICK)
         } catch (e: Exception) {
-            StatusStore.log("Alarm konnte Dienst nicht wecken: ${e.javaClass.simpleName}")
+            StatusStore.log(
+                context.getString(R.string.log_alarm_failed, e.javaClass.simpleName)
+            )
             AlarmScheduler(context).schedule(config.intervalMinutes)
         }
     }

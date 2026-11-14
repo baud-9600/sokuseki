@@ -97,8 +97,8 @@ class TrackingService : Service() {
         }
 
         if (!hasFineLocationPermission()) {
-            StatusStore.log("Keine Standortberechtigung – Dienst angehalten.")
-            StatusStore.update { it.copy(lastError = "Standortberechtigung fehlt") }
+            StatusStore.log(getString(R.string.log_no_permission))
+            StatusStore.update { it.copy(lastError = getString(R.string.error_location_missing)) }
             if (enabled) {
                 configStore.enabled = false
                 alarmScheduler.cancel()
@@ -109,9 +109,9 @@ class TrackingService : Service() {
         }
 
         if (config.validationError() != null) {
-            StatusStore.log("Konfiguration unvollständig – Dienst angehalten.")
+            StatusStore.log(getString(R.string.log_config_incomplete))
             StatusStore.update {
-                it.copy(lastError = config.validationError() ?: "Konfiguration unvollständig")
+                it.copy(lastError = getString(R.string.error_config_incomplete))
             }
             if (enabled) {
                 configStore.enabled = false
@@ -234,11 +234,11 @@ class TrackingService : Service() {
         val wakeLock = acquireWakeLock()
         try {
             StatusStore.update { it.copy(lastAttemptAt = System.currentTimeMillis()) }
-            StatusStore.log("Suche Standort …")
+            StatusStore.log(getString(R.string.log_searching))
             val location = locate()
             if (location == null) {
-                StatusStore.update { it.copy(lastError = "Kein Standort-Fix") }
-                StatusStore.log("Kein Standort-Fix – nächster Versuch beim nächsten Alarm.")
+                StatusStore.update { it.copy(lastError = getString(R.string.log_no_fix)) }
+                StatusStore.log(getString(R.string.log_no_fix_next))
                 return
             }
 
@@ -275,29 +275,30 @@ class TrackingService : Service() {
             if (queue.size() > 0 && !drainBacklog(config)) {
                 queue.add(payload)
                 StatusStore.update { it.copy(pending = queue.size()) }
-                StatusStore.log("Server noch nicht erreichbar – aktueller Punkt vorgemerkt.")
+                StatusStore.log(getString(R.string.log_queued_current))
                 updateNotification()
                 return
             }
 
             val result = sender.send(config, payload)
             recordResult(result)
+            val resultText = describe(result)
             if (result.success) {
                 StatusStore.update { it.copy(lastSentAt = System.currentTimeMillis()) }
                 StatusStore.log(
-                    "Gesendet: %.5f, %.5f (%s)".format(
-                        Locale.US,
-                        location.latitude,
-                        location.longitude,
-                        result.message,
+                    getString(
+                        R.string.log_sent,
+                        formatCoordinate(location.latitude),
+                        formatCoordinate(location.longitude),
+                        resultText,
                     )
                 )
             } else if (result.retryable) {
                 queue.add(payload)
                 StatusStore.update { it.copy(pending = queue.size()) }
-                StatusStore.log("Nicht gesendet (${result.message}) – Punkt vorgemerkt.")
+                StatusStore.log(getString(R.string.log_not_sent_queued, resultText))
             } else {
-                StatusStore.log("Nicht gesendet (${result.message}) – Punkt verworfen.")
+                StatusStore.log(getString(R.string.log_not_sent_discarded, resultText))
             }
 
             StatusStore.update { it.copy(pending = queue.size()) }
@@ -305,7 +306,13 @@ class TrackingService : Service() {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            StatusStore.log("Zyklusfehler: ${e.javaClass.simpleName}: ${e.message}")
+            StatusStore.log(
+                getString(
+                    R.string.log_cycle_error,
+                    e.javaClass.simpleName,
+                    e.message ?: "",
+                )
+            )
             StatusStore.update { it.copy(lastError = e.message ?: e.javaClass.simpleName) }
         } finally {
             releaseWakeLock(wakeLock)
@@ -328,16 +335,16 @@ class TrackingService : Service() {
                     it.copy(lastSentAt = System.currentTimeMillis(), pending = queue.size())
                 }
             } else if (result.retryable) {
-                StatusStore.log("Rückstand bleibt liegen: ${result.message}")
+                StatusStore.log(getString(R.string.log_backlog_waiting, describe(result)))
                 return false
             } else {
                 queue.removeFirst()
-                StatusStore.log("Rückstand verworfen (${result.message}).")
+                StatusStore.log(getString(R.string.log_backlog_discarded, describe(result)))
                 StatusStore.update { it.copy(pending = queue.size()) }
             }
         }
         if (sent > 0) {
-            StatusStore.log("$sent ältere(r) Punkt(e) nachgesendet.")
+            StatusStore.log(getString(R.string.log_backlog_sent, sent))
         }
         return true
     }
@@ -346,12 +353,31 @@ class TrackingService : Service() {
         StatusStore.update {
             it.copy(
                 lastCode = result.code,
-                lastError = if (result.success) "" else result.message,
+                lastError = if (result.success) "" else describe(result),
                 lastBody = result.body,
                 lastAttemptAt = System.currentTimeMillis(),
             )
         }
     }
+
+    private fun describe(result: SendResult): String = when (result.failure) {
+        SendFailure.NONE -> getString(R.string.http_status, result.code)
+        SendFailure.HTTP -> getString(R.string.send_error_http, result.code)
+        SendFailure.TLS -> getString(
+            R.string.send_error_detail,
+            getString(R.string.send_error_tls),
+            result.detail,
+        )
+        SendFailure.TIMEOUT -> getString(R.string.send_error_timeout)
+        SendFailure.NETWORK -> getString(
+            R.string.send_error_detail,
+            getString(R.string.send_error_network),
+            result.detail,
+        )
+    }
+
+    private fun formatCoordinate(value: Double): String =
+        String.format(Locale.US, "%.5f", value)
 
     private suspend fun locate(): Location? = coroutineScope {
         val cached = bestLastKnown()
@@ -491,7 +517,7 @@ class TrackingService : Service() {
         loopJob = null
         isRunning = false
         StatusStore.setRunning(false)
-        StatusStore.log("Tracking gestoppt.")
+        StatusStore.log(getString(R.string.log_stopped))
         stopForegroundCompat()
         stopSelf()
     }
@@ -504,10 +530,10 @@ class TrackingService : Service() {
         val manager = getSystemService(NotificationManager::class.java)
         val channel = NotificationChannel(
             CHANNEL_ID,
-            "Standort-Tracking",
+            getString(R.string.notification_channel_name),
             NotificationManager.IMPORTANCE_LOW,
         ).apply {
-            description = "Sendet den Standort an Home Assistant"
+            description = getString(R.string.notification_channel_description)
             setShowBadge(false)
             enableVibration(false)
             enableLights(false)
@@ -520,9 +546,13 @@ class TrackingService : Service() {
     private fun buildNotification(): Notification {
         val status = StatusStore.state.value
         val detail = when {
-            status.lastError.isNotBlank() -> "Fehler: ${status.lastError}"
-            status.lastSentAt > 0 -> "Zuletzt ${time(status.lastSentAt)} · ${status.pending} in Warteschlange"
-            else -> "Warte auf ersten Standort-Fix"
+            status.lastError.isNotBlank() -> getString(R.string.notification_error, status.lastError)
+            status.lastSentAt > 0 -> getString(
+                R.string.notification_last_sent,
+                time(status.lastSentAt),
+                status.pending,
+            )
+            else -> getString(R.string.notification_waiting)
         }
         val contentIntent = PendingIntent.getActivity(
             this,
@@ -544,7 +574,7 @@ class TrackingService : Service() {
         )
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_location)
-            .setContentTitle("Sokuseki aktiv")
+            .setContentTitle(getString(R.string.notification_title))
             .setContentText(detail)
             .setStyle(NotificationCompat.BigTextStyle().bigText(detail))
             .setContentIntent(contentIntent)
@@ -555,8 +585,8 @@ class TrackingService : Service() {
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
-            .addAction(0, "Jetzt senden", sendIntent)
-            .addAction(0, "Stopp", stopIntent)
+            .addAction(0, getString(R.string.notification_action_send), sendIntent)
+            .addAction(0, getString(R.string.notification_action_stop), stopIntent)
             .build()
     }
 
@@ -590,7 +620,7 @@ class TrackingService : Service() {
     }
 
     private fun time(millis: Long): String =
-        SimpleDateFormat("HH:mm", Locale.GERMANY).format(Date(millis))
+        SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(millis))
 
     companion object {
         const val ACTION_START = "de.asdfghasdfgh.sokuseki.action.START"

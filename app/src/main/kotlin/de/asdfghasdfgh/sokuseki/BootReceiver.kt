@@ -15,7 +15,9 @@ class BootReceiver : BroadcastReceiver() {
         try {
             TrackingService.deliver(context, TrackingService.ACTION_START)
         } catch (e: Exception) {
-            StatusStore.log("Neustart: Dienst konnte nicht starten: ${e.javaClass.simpleName}")
+            StatusStore.log(
+                context.getString(R.string.log_boot_failed, e.javaClass.simpleName)
+            )
         }
     }
 }

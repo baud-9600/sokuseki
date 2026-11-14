@@ -77,7 +77,7 @@ object StatusStore {
     }
 
     fun log(message: String) {
-        val stamp = SimpleDateFormat("HH:mm:ss", Locale.GERMANY).format(Date())
+        val stamp = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
         update { current ->
             current.copy(logs = (current.logs + "$stamp  $message").takeLast(MAX_LOG_LINES))
         }

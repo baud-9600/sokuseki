@@ -13,11 +13,20 @@ import javax.net.ssl.SSLException
 import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
 
+enum class SendFailure {
+    NONE,
+    HTTP,
+    TLS,
+    TIMEOUT,
+    NETWORK,
+}
+
 data class SendResult(
     val success: Boolean,
     val retryable: Boolean,
     val code: Int,
-    val message: String,
+    val failure: SendFailure,
+    val detail: String = "",
     val body: String = "",
 )
 
@@ -65,7 +74,8 @@ class HttpSender {
                 success = success,
                 retryable = retryable,
                 code = code,
-                message = if (success) "HTTP $code" else "HTTP $code${body.takeIf { it.isNotBlank() }?.let { ": ${it.take(160)}" }.orEmpty()}",
+                failure = if (success) SendFailure.NONE else SendFailure.HTTP,
+                detail = if (success) "" else body.take(160),
                 body = body.take(300),
             )
         } catch (e: SSLException) {
@@ -73,16 +83,18 @@ class HttpSender {
                 success = false,
                 retryable = true,
                 code = -1,
-                message = "TLS-Fehler: ${e.message ?: e.javaClass.simpleName}",
+                failure = SendFailure.TLS,
+                detail = e.message ?: e.javaClass.simpleName,
             )
         } catch (e: SocketTimeoutException) {
-            SendResult(false, true, -1, "Zeitüberschreitung")
+            SendResult(false, true, -1, SendFailure.TIMEOUT)
         } catch (e: Exception) {
             SendResult(
                 success = false,
                 retryable = true,
                 code = -1,
-                message = "Netzwerkfehler: ${e.message ?: e.javaClass.simpleName}",
+                failure = SendFailure.NETWORK,
+                detail = e.message ?: e.javaClass.simpleName,
             )
         } finally {
             connection?.disconnect()

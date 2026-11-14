@@ -27,14 +27,14 @@ data class TrackConfig(
         intervalMinutes = intervalMinutes.coerceIn(MIN_INTERVAL_MINUTES, MAX_INTERVAL_MINUTES),
     )
 
-    fun validationError(): String? {
+    fun validationError(): ConfigError? {
         if (!url.startsWith("http://") && !url.startsWith("https://")) {
-            return "Die Webhook-URL muss mit http:// oder https:// beginnen."
+            return ConfigError.URL
         }
-        if (user.isBlank()) return "Benutzername fehlt."
-        if (device.isBlank()) return "Geräte-ID fehlt."
+        if (user.isBlank()) return ConfigError.USER
+        if (device.isBlank()) return ConfigError.DEVICE
         if (intervalMinutes !in MIN_INTERVAL_MINUTES..MAX_INTERVAL_MINUTES) {
-            return "Intervall muss zwischen $MIN_INTERVAL_MINUTES und $MAX_INTERVAL_MINUTES Minuten liegen."
+            return ConfigError.INTERVAL
         }
         return null
     }
@@ -44,6 +44,13 @@ data class TrackConfig(
         const val MIN_INTERVAL_MINUTES = 1
         const val MAX_INTERVAL_MINUTES = 120
     }
+}
+
+enum class ConfigError {
+    URL,
+    USER,
+    DEVICE,
+    INTERVAL,
 }
 
 class ConfigStore(context: Context) {

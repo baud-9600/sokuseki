@@ -41,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -57,7 +58,7 @@ import com.mudita.mmd.components.buttons.OutlinedButtonMMD
 import com.mudita.mmd.components.switcher.SwitchMMD
 import com.mudita.mmd.components.text.TextMMD
 import com.mudita.mmd.components.text_field.TextFieldMMD
-import java.text.SimpleDateFormat
+import java.text.DateFormat
 import java.util.Date
 import java.util.Locale
 
@@ -121,8 +122,8 @@ private fun TrackerScreen() {
 
     fun startTrackingNow() {
         TrackingService.start(context)
-        StatusStore.log("Dienst gestartet.")
-        message = "Dienst gestartet."
+        StatusStore.log(context.getString(R.string.log_started))
+        message = context.getString(R.string.message_started)
         if (!batteryExempt) {
             runCatching {
                 context.startActivity(
@@ -144,7 +145,7 @@ private fun TrackerScreen() {
     ) { result ->
         val fine = result[Manifest.permission.ACCESS_FINE_LOCATION] == true || fineGranted
         if (!fine) {
-            message = "Ohne Standortberechtigung kann nicht gesendet werden."
+            message = context.getString(R.string.message_need_location)
         } else if (!backgroundGranted) {
             backgroundLauncher.launch(arrayOf(Manifest.permission.ACCESS_BACKGROUND_LOCATION))
         } else {
@@ -164,11 +165,11 @@ private fun TrackerScreen() {
         )
         val error = candidate.validationError()
         if (error != null) {
-            message = error
+            message = configErrorText(context, error)
             return
         }
         store.save(candidate)
-        message = "Gespeichert."
+        message = context.getString(R.string.message_saved)
         val missing = buildList {
             if (!fineGranted) {
                 add(Manifest.permission.ACCESS_FINE_LOCATION)
@@ -197,27 +198,29 @@ private fun TrackerScreen() {
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         TextMMD(
-            text = "Sokuseki",
+            text = stringResource(R.string.screen_title),
             fontSize = 30.sp,
             fontWeight = FontWeight.Bold,
         )
         TextMMD(
-            text = "足跡 · OwnTracks → Home Assistant",
+            text = stringResource(R.string.screen_subtitle),
             fontSize = 14.sp,
         )
         TextMMD(
-            text = if (status.running) "● Dienst läuft" else "○ Dienst gestoppt",
+            text = stringResource(
+                if (status.running) R.string.status_running else R.string.status_stopped
+            ),
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold,
         )
 
         HorizontalDivider()
-        SectionTitle("Verbindung")
+        SectionTitle(stringResource(R.string.section_connection))
         TextFieldMMD(
             value = url,
             onValueChange = { url = it },
-            label = { TextMMD("Webhook-URL") },
-            placeholder = { TextMMD("https://…/api/webhook/…") },
+            label = { TextMMD(stringResource(R.string.field_webhook_url)) },
+            placeholder = { TextMMD(stringResource(R.string.hint_webhook_url)) },
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
             modifier = Modifier.fillMaxWidth(),
@@ -225,40 +228,40 @@ private fun TrackerScreen() {
         TextFieldMMD(
             value = user,
             onValueChange = { user = it },
-            label = { TextMMD("Benutzername (X-Limit-U)") },
+            label = { TextMMD(stringResource(R.string.field_user)) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
         TextFieldMMD(
             value = device,
             onValueChange = { device = it },
-            label = { TextMMD("Geräte-ID (X-Limit-D)") },
+            label = { TextMMD(stringResource(R.string.field_device)) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
         TextFieldMMD(
             value = tid,
             onValueChange = { tid = it },
-            label = { TextMMD("Tracker-ID (optional)") },
+            label = { TextMMD(stringResource(R.string.field_tid)) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
         TextFieldMMD(
             value = password,
             onValueChange = { password = it },
-            label = { TextMMD("Passwort (optional)") },
+            label = { TextMMD(stringResource(R.string.field_password)) },
             singleLine = true,
             visualTransformation = PasswordVisualTransformation(),
             modifier = Modifier.fillMaxWidth(),
         )
 
         HorizontalDivider()
-        SectionTitle("Senden")
+        SectionTitle(stringResource(R.string.section_sending))
         TextFieldMMD(
             value = interval,
             onValueChange = { interval = it.filter(Char::isDigit).take(3) },
-            label = { TextMMD("Intervall in Minuten") },
-            supportingText = { TextMMD("1–120 Minuten, auch im Ruhezustand") },
+            label = { TextMMD(stringResource(R.string.field_interval)) },
+            supportingText = { TextMMD(stringResource(R.string.hint_interval)) },
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth(),
@@ -270,9 +273,9 @@ private fun TrackerScreen() {
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                TextMMD("Selbstsignierte TLS-Zertifikate", fontSize = 15.sp)
+                TextMMD(stringResource(R.string.switch_trust_all), fontSize = 15.sp)
                 TextMMD(
-                    "Nur nötig, wenn Home Assistant ein eigenes Zertifikat nutzt.",
+                    stringResource(R.string.hint_trust_all),
                     fontSize = 11.sp,
                 )
             }
@@ -286,32 +289,32 @@ private fun TrackerScreen() {
             onClick = { requestStart() },
             modifier = Modifier.fillMaxWidth(),
         ) {
-            TextMMD("Speichern & starten")
+            TextMMD(stringResource(R.string.button_save_start))
         }
         OutlinedButtonMMD(
             onClick = {
                 if (ConfigStore(context).load().validationError() != null) {
-                    message = "Bitte zuerst eine gültige Konfiguration speichern."
+                    message = context.getString(R.string.message_invalid_config)
                 } else {
                     TrackingService.sendNow(context)
-                    message = "Sendeauftrag ausgelöst."
+                    message = context.getString(R.string.message_send_triggered)
                 }
             },
             modifier = Modifier.fillMaxWidth(),
         ) {
-            TextMMD("Jetzt senden")
+            TextMMD(stringResource(R.string.button_send_now))
         }
         OutlinedButtonMMD(
             onClick = {
                 ConfigStore(context).enabled = false
                 if (TrackingService.isRunning) TrackingService.stop(context)
                 StatusStore.setRunning(false)
-                StatusStore.log("Tracking gestoppt.")
-                message = "Dienst gestoppt."
+                StatusStore.log(context.getString(R.string.log_stopped))
+                message = context.getString(R.string.message_stopped)
             },
             modifier = Modifier.fillMaxWidth(),
         ) {
-            TextMMD("Stopp")
+            TextMMD(stringResource(R.string.button_stop))
         }
 
         if (message.isNotBlank()) {
@@ -323,12 +326,12 @@ private fun TrackerScreen() {
         }
 
         HorizontalDivider()
-        SectionTitle("Berechtigungen")
-        PermissionLine("Standort", fineGranted)
-        PermissionLine("Hintergrundstandort", backgroundGranted)
-        PermissionLine("Benachrichtigungen", notificationsGranted)
-        PermissionLine("Akku-Optimierung aus", batteryExempt)
-        PermissionLine("Exakte Alarme", exactAlarms)
+        SectionTitle(stringResource(R.string.section_permissions))
+        PermissionLine(stringResource(R.string.permission_location), fineGranted)
+        PermissionLine(stringResource(R.string.permission_background_location), backgroundGranted)
+        PermissionLine(stringResource(R.string.permission_notifications), notificationsGranted)
+        PermissionLine(stringResource(R.string.permission_battery), batteryExempt)
+        PermissionLine(stringResource(R.string.permission_exact_alarms), exactAlarms)
 
         if (!backgroundGranted) {
             OutlinedButtonMMD(
@@ -337,7 +340,7 @@ private fun TrackerScreen() {
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                TextMMD("Hintergrundstandort erlauben")
+                TextMMD(stringResource(R.string.button_allow_background))
             }
         }
         if (!batteryExempt) {
@@ -354,7 +357,7 @@ private fun TrackerScreen() {
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                TextMMD("Akku-Optimierung erlauben")
+                TextMMD(stringResource(R.string.button_allow_battery))
             }
         }
         if (!exactAlarms) {
@@ -371,7 +374,7 @@ private fun TrackerScreen() {
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                TextMMD("Exakte Alarme erlauben")
+                TextMMD(stringResource(R.string.button_allow_exact_alarms))
             }
         }
         OutlinedButtonMMD(
@@ -387,21 +390,34 @@ private fun TrackerScreen() {
             },
             modifier = Modifier.fillMaxWidth(),
         ) {
-            TextMMD("App-Einstellungen öffnen")
+            TextMMD(stringResource(R.string.button_app_settings))
         }
 
         HorizontalDivider()
-        SectionTitle("Status")
-        StatusLine("Letzter Fix", formatTimestamp(status.lastFixAt, status.lastFixLat, status.lastFixLon))
-        StatusLine("Zuletzt gesendet", formatTimestamp(status.lastSentAt))
-        StatusLine("Warteschlange", "${status.pending} Punkt(e)")
-        StatusLine("Letzter HTTP-Status", if (status.lastCode == 0) "–" else status.lastCode.toString())
+        SectionTitle(stringResource(R.string.section_status))
+        StatusLine(
+            stringResource(R.string.status_last_fix),
+            formatTimestamp(status.lastFixAt, status.lastFixLat, status.lastFixLon),
+        )
+        StatusLine(stringResource(R.string.status_last_sent), formatTimestamp(status.lastSentAt))
+        StatusLine(
+            stringResource(R.string.status_queue),
+            stringResource(R.string.status_queue_value, status.pending),
+        )
+        StatusLine(
+            stringResource(R.string.status_last_http),
+            if (status.lastCode == 0) "–" else status.lastCode.toString(),
+        )
         if (status.lastError.isNotBlank()) {
-            StatusLine("Fehler", status.lastError)
+            StatusLine(stringResource(R.string.status_error), status.lastError)
         }
         if (status.logs.isNotEmpty()) {
             Spacer(Modifier.height(2.dp))
-            TextMMD("Protokoll", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            TextMMD(
+                stringResource(R.string.logs_title),
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+            )
             status.logs.takeLast(10).forEach { line ->
                 TextMMD(
                     text = line,
@@ -415,7 +431,7 @@ private fun TrackerScreen() {
 
         Spacer(Modifier.height(8.dp))
         TextMMD(
-            text = "MMD · E Ink · ${BuildConfig.VERSION_NAME}",
+            text = stringResource(R.string.footer, BuildConfig.VERSION_NAME),
             fontSize = 10.sp,
         )
         Spacer(Modifier.height(14.dp))
@@ -425,7 +441,7 @@ private fun TrackerScreen() {
 @Composable
 private fun SectionTitle(text: String) {
     TextMMD(
-        text = text.uppercase(Locale.GERMANY),
+        text = text.uppercase(Locale.getDefault()),
         fontSize = 12.sp,
         fontWeight = FontWeight.Bold,
     )
@@ -438,7 +454,13 @@ private fun PermissionLine(label: String, granted: Boolean) {
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         TextMMD(label, fontSize = 13.sp)
-        TextMMD(if (granted) "erlaubt" else "fehlt", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+        TextMMD(
+            stringResource(
+                if (granted) R.string.permission_granted else R.string.permission_missing
+            ),
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Bold,
+        )
     }
 }
 
@@ -453,9 +475,24 @@ private fun StatusLine(label: String, value: String) {
 private fun hasPermission(context: Context, permission: String): Boolean =
     ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
 
+private fun configErrorText(context: Context, error: ConfigError): String = when (error) {
+    ConfigError.URL -> context.getString(R.string.error_url)
+    ConfigError.USER -> context.getString(R.string.error_user)
+    ConfigError.DEVICE -> context.getString(R.string.error_device)
+    ConfigError.INTERVAL -> context.getString(
+        R.string.error_interval,
+        TrackConfig.MIN_INTERVAL_MINUTES,
+        TrackConfig.MAX_INTERVAL_MINUTES,
+    )
+}
+
 private fun formatTimestamp(millis: Long, lat: Double? = null, lon: Double? = null): String {
     if (millis <= 0) return "–"
-    val time = SimpleDateFormat("dd.MM. HH:mm:ss", Locale.GERMANY).format(Date(millis))
+    val time = DateFormat.getDateTimeInstance(
+        DateFormat.SHORT,
+        DateFormat.MEDIUM,
+        Locale.getDefault(),
+    ).format(Date(millis))
     return if (lat != null && lon != null) {
         "%.5f, %.5f · %s".format(Locale.US, lat, lon, time)
     } else {

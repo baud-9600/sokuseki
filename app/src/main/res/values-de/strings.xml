@@ -1,4 +1,97 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Standort</string>
+
+    <string name="screen_title">Sokuseki</string>
+    <string name="screen_subtitle">足跡 · OwnTracks → Home Assistant</string>
+    <string name="status_running">● Dienst läuft</string>
+    <string name="status_stopped">○ Dienst gestoppt</string>
+
+    <string name="section_connection">Verbindung</string>
+    <string name="field_webhook_url">Webhook-URL</string>
+    <string name="hint_webhook_url">https://…/api/webhook/…</string>
+    <string name="field_user">Benutzername (X-Limit-U)</string>
+    <string name="field_device">Geräte-ID (X-Limit-D)</string>
+    <string name="field_tid">Tracker-ID (optional)</string>
+    <string name="field_password">Passwort (optional)</string>
+
+    <string name="section_sending">Senden</string>
+    <string name="field_interval">Intervall in Minuten</string>
+    <string name="hint_interval">1–120 Minuten, auch im Ruhezustand</string>
+    <string name="switch_trust_all">Selbstsignierte TLS-Zertifikate</string>
+    <string name="hint_trust_all">Nur nötig, wenn Home Assistant ein eigenes Zertifikat nutzt.</string>
+    <string name="button_save_start">Speichern &amp; starten</string>
+    <string name="button_send_now">Jetzt senden</string>
+    <string name="button_stop">Stopp</string>
+
+    <string name="message_started">Dienst gestartet.</string>
+    <string name="message_saved">Gespeichert.</string>
+    <string name="message_need_location">Ohne Standortberechtigung kann nicht gesendet werden.</string>
+    <string name="message_invalid_config">Bitte zuerst eine gültige Konfiguration speichern.</string>
+    <string name="message_send_triggered">Sendeauftrag ausgelöst.</string>
+    <string name="message_stopped">Dienst gestoppt.</string>
+
+    <string name="section_permissions">Berechtigungen</string>
+    <string name="permission_location">Standort</string>
+    <string name="permission_background_location">Hintergrundstandort</string>
+    <string name="permission_notifications">Benachrichtigungen</string>
+    <string name="permission_battery">Akku-Optimierung aus</string>
+    <string name="permission_exact_alarms">Exakte Alarme</string>
+    <string name="permission_granted">erlaubt</string>
+    <string name="permission_missing">fehlt</string>
+    <string name="button_allow_background">Hintergrundstandort erlauben</string>
+    <string name="button_allow_battery">Akku-Optimierung erlauben</string>
+    <string name="button_allow_exact_alarms">Exakte Alarme erlauben</string>
+    <string name="button_app_settings">App-Einstellungen öffnen</string>
+
+    <string name="section_status">Status</string>
+    <string name="status_last_fix">Letzter Fix</string>
+    <string name="status_last_sent">Zuletzt gesendet</string>
+    <string name="status_queue">Warteschlange</string>
+    <string name="status_queue_value">%1$d Punkt(e)</string>
+    <string name="status_last_http">Letzter HTTP-Status</string>
+    <string name="status_error">Fehler</string>
+    <string name="logs_title">Protokoll</string>
+    <string name="footer">MMD · E Ink · %1$s</string>
+
+    <string name="notification_channel_name">Standort-Tracking</string>
+    <string name="notification_channel_description">Sendet den Standort an Home Assistant</string>
+    <string name="notification_title">Sokuseki aktiv</string>
+    <string name="notification_error">Fehler: %1$s</string>
+    <string name="notification_last_sent">Zuletzt %1$s · %2$d in Warteschlange</string>
+    <string name="notification_waiting">Warte auf ersten Standort-Fix</string>
+    <string name="notification_action_send">Jetzt senden</string>
+    <string name="notification_action_stop">Stopp</string>
+
+    <string name="log_started">Dienst gestartet.</string>
+    <string name="log_stopped">Tracking gestoppt.</string>
+    <string name="log_searching">Suche Standort …</string>
+    <string name="log_no_fix">Kein Standort-Fix</string>
+    <string name="log_no_fix_next">Kein Standort-Fix – nächster Versuch beim nächsten Alarm.</string>
+    <string name="log_sent">Gesendet: %1$s, %2$s (%3$s)</string>
+    <string name="log_queued_current">Server noch nicht erreichbar – aktueller Punkt vorgemerkt.</string>
+    <string name="log_not_sent_queued">Nicht gesendet (%1$s) – Punkt vorgemerkt.</string>
+    <string name="log_not_sent_discarded">Nicht gesendet (%1$s) – Punkt verworfen.</string>
+    <string name="log_cycle_error">Zyklusfehler: %1$s: %2$s</string>
+    <string name="log_backlog_waiting">Rückstand bleibt liegen: %1$s</string>
+    <string name="log_backlog_discarded">Rückstand verworfen (%1$s).</string>
+    <string name="log_backlog_sent">%1$d ältere(r) Punkt(e) nachgesendet.</string>
+    <string name="log_no_permission">Keine Standortberechtigung – Dienst angehalten.</string>
+    <string name="log_config_incomplete">Konfiguration unvollständig – Dienst angehalten.</string>
+    <string name="log_alarm_failed">Alarm konnte Dienst nicht wecken: %1$s</string>
+    <string name="log_boot_failed">Neustart: Dienst konnte nicht starten: %1$s</string>
+
+    <string name="error_location_missing">Standortberechtigung fehlt</string>
+    <string name="error_config_incomplete">Konfiguration unvollständig</string>
+    <string name="error_url">Die Webhook-URL muss mit http:// oder https:// beginnen.</string>
+    <string name="error_user">Benutzername fehlt.</string>
+    <string name="error_device">Geräte-ID fehlt.</string>
+    <string name="error_interval">Intervall muss zwischen %1$d und %2$d Minuten liegen.</string>
+
+    <string name="http_status">HTTP %1$d</string>
+    <string name="send_error_http">HTTP %1$d</string>
+    <string name="send_error_tls">TLS-Fehler</string>
+    <string name="send_error_timeout">Zeitüberschreitung</string>
+    <string name="send_error_network">Netzwerkfehler</string>
+    <string name="send_error_detail">%1$s: %2$s</string>
 </resources>

@@ -59,9 +59,14 @@ Requirements:
 adb install -r app/build/outputs/apk/release/app-release.apk
 ```
 
-The release build is signed with the shared Kompakt key from `signing/signing.keystore`
-when that gitignored file is present. Without it the release APK is unsigned and cannot
-be installed.
+Locally the release build uses the shared Kompakt key in
+`~/asdfghasdfgh-signing/asdfghasdfgh-release.keystore` (with its
+`asdfghasdfgh-keystore.properties`). In CI the same key is restored into the gitignored
+`signing/` directory from repository secrets. Without either source the release APK is
+unsigned and cannot be installed.
+
+The UI is bilingual: English is the default resource set, German lives in
+`app/src/main/res/values-de/strings.xml`. The launcher name is “Location” / “Standort”.
 
 ## Configuration
 
@@ -114,9 +119,10 @@ the permission Android may defer the alarm.
 
 - `versionName = "0.1.0"`, tag `v0.1.0`, `versionCode = 10_000` (the same
   `major * 10_000_000 + minor * 10_000 + patch` scheme as the other Kompakt apps).
-- The shared signing key is in the gitignored `signing/` directory. GitHub Actions
-  restores it from the repository secrets `SIGNING_KEYSTORE_BASE64`,
-  `SIGNING_STORE_PASSWORD`, `SIGNING_KEY_ALIAS`, and `SIGNING_KEY_PASSWORD`.
+- The shared signing key is the one in `~/asdfghasdfgh-signing/` (the same key as the
+  other apps). GitHub Actions restores it from the repository secrets
+  `SIGNING_KEYSTORE_BASE64`, `SIGNING_STORE_PASSWORD`, `SIGNING_KEY_ALIAS`, and
+  `SIGNING_KEY_PASSWORD`.
 - Pushing a `v*` tag runs `.github/workflows/release.yml`, verifies the signing
   certificate, checks that `versionName` matches the tag, and attaches
   `sokuseki-v0.1.0.apk`, `sokuseki.apk`, and their SHA-256 files to the GitHub release.
@@ -134,7 +140,11 @@ Tested on a Mudita Kompakt running MuditaOS K 1.6.1 (Android 12):
 - after a simulated reboot the foreground service was running again and sending,
 - after an app update (`MY_PACKAGE_REPLACED`) the service restarted on its own,
 - with Wi-Fi and mobile data disabled, two fixes were queued; after restoring the
-  network the queue drained and the next request returned HTTP 200.
+  network the queue drained and the next request returned HTTP 200,
+- the release APK is signed with the shared certificate
+  `311b5cbb24e690121d1d2df664cb879e7a88b74ffee5be87c897c04a59aa6665` and installs over
+  the previous release build,
+- the German and English resource sets are both present in the release APK.
 
 ## Scope and limitations
 
