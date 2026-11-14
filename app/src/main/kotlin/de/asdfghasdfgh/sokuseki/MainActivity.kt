@@ -404,6 +404,12 @@ private fun TrackerScreen() {
             stringResource(R.string.status_queue),
             stringResource(R.string.status_queue_value, status.pending),
         )
+        if (status.pending > 0) {
+            TextMMD(
+                stringResource(R.string.status_queue_hint),
+                fontSize = 10.sp,
+            )
+        }
         StatusLine(
             stringResource(R.string.status_last_http),
             if (status.lastCode == 0) "–" else status.lastCode.toString(),

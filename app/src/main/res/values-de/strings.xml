@@ -49,6 +49,7 @@
     <string name="status_last_sent">Zuletzt gesendet</string>
     <string name="status_queue">Warteschlange</string>
     <string name="status_queue_value">%1$d Punkt(e)</string>
+    <string name="status_queue_hint">Wird im nächsten Zyklus automatisch nachgesendet.</string>
     <string name="status_last_http">Letzter HTTP-Status</string>
     <string name="status_error">Fehler</string>
     <string name="logs_title">Protokoll</string>
@@ -90,6 +91,7 @@
 
     <string name="http_status">HTTP %1$d</string>
     <string name="send_error_http">HTTP %1$d</string>
+    <string name="send_error_gateway">Home Assistant nicht erreichbar (HTTP %1$d)</string>
     <string name="send_error_tls">TLS-Fehler</string>
     <string name="send_error_timeout">Zeitüberschreitung</string>
     <string name="send_error_network">Netzwerkfehler</string>

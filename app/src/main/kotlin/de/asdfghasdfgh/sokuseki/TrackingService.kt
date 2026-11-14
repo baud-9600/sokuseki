@@ -362,7 +362,11 @@ class TrackingService : Service() {
 
     private fun describe(result: SendResult): String = when (result.failure) {
         SendFailure.NONE -> getString(R.string.http_status, result.code)
-        SendFailure.HTTP -> getString(R.string.send_error_http, result.code)
+        SendFailure.HTTP -> if (result.code == 502 || result.code == 503 || result.code == 504) {
+            getString(R.string.send_error_gateway, result.code)
+        } else {
+            getString(R.string.send_error_http, result.code)
+        }
         SendFailure.TLS -> getString(
             R.string.send_error_detail,
             getString(R.string.send_error_tls),
