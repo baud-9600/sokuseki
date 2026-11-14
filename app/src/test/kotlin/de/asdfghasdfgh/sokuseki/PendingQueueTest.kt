@@ -1,4 +1,4 @@
-package de.asdfghasdfgh.muditracks
+package de.asdfghasdfgh.sokuseki
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -9,7 +9,7 @@ class PendingQueueTest {
 
     @Test
     fun `survives a restart and keeps FIFO order`() {
-        val dir = Files.createTempDirectory("muditracks-queue").toFile()
+        val dir = Files.createTempDirectory("sokuseki-queue").toFile()
         val file = dir.resolve("pending.jsonl")
 
         PendingQueue(file).apply {
@@ -33,7 +33,7 @@ class PendingQueueTest {
 
     @Test
     fun `drops the oldest entry when full`() {
-        val dir = Files.createTempDirectory("muditracks-queue-max").toFile()
+        val dir = Files.createTempDirectory("sokuseki-queue-max").toFile()
         val queue = PendingQueue(dir.resolve("pending.jsonl"), maxEntries = 2)
         queue.add("""{"n":1}""")
         queue.add("""{"n":2}""")

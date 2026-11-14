@@ -1,4 +1,4 @@
-package de.asdfghasdfgh.muditracks
+package de.asdfghasdfgh.sokuseki
 
 import android.content.Context
 import android.content.SharedPreferences
@@ -83,7 +83,7 @@ object StatusStore {
         }
     }
 
-    private const val PREFS = "muditracks_status"
+    private const val PREFS = "sokuseki_status"
     private const val KEY_FIX_AT = "fix_at"
     private const val KEY_FIX_LAT = "fix_lat"
     private const val KEY_FIX_LON = "fix_lon"

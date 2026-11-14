@@ -1,4 +1,4 @@
-package de.asdfghasdfgh.muditracks
+package de.asdfghasdfgh.sokuseki
 
 import android.app.AlarmManager
 import android.app.PendingIntent

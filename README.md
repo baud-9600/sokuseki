@@ -1,11 +1,13 @@
-# Muditracks
+# 足跡 sokuseki — Location
 
 A small, deliberately boring OwnTracks client for the **Mudita Kompakt** (Android 12,
 E Ink). It posts OwnTracks-compatible location messages to a **Home Assistant OwnTracks
 HTTP webhook** and is built to keep working when the phone is asleep.
 
+*Sokuseki* (足跡) means footprints or tracks — the trail the phone leaves behind.
+
 The regular OwnTracks app is powerful, but on the Kompakt it is easy to lose location
-updates when the screen is off. Muditracks reduces the problem to the parts that matter:
+updates when the screen is off. sokuseki reduces the problem to the parts that matter:
 
 - a real foreground service with `foregroundServiceType="location"`,
 - a short partial wake lock around every fix and HTTP request,
@@ -14,13 +16,24 @@ updates when the screen is off. Muditracks reduces the problem to the parts that
 - a persistent FIFO for fixes that could not be delivered,
 - no Google Play Services, no FusedLocationProvider, no MQTT library.
 
-The UI uses [Mudita MMD](https://github.com/mudita/MMD) from the local Maven repository.
+The UI uses [Mudita MMD](https://github.com/mudita/MMD); locally it is resolved from
+`~/.m2`, in CI from Maven Central.
+
+## Download
+
+The latest CI-built APK is attached to the GitHub release:
+
+<https://github.com/baud-9600/sokuseki/releases/latest/download/sokuseki.apk>
+
+The CI APK is intentionally built without the private webhook defaults. Enter the
+webhook URL in the app on first start. A local build with `local.properties` can ship
+with the defaults already filled in.
 
 ## Home Assistant setup
 
 1. In Home Assistant go to **Settings → Devices & services → Add integration →
    OwnTracks**.
-2. Home Assistant shows a **webhook URL** (and an optional encryption key). Muditracks
+2. Home Assistant shows a **webhook URL** (and an optional encryption key). sokuseki
    uses the unencrypted HTTP mode, so only the URL is needed. Keep the URL private: the
    long webhook ID is the only secret in HTTP mode.
 3. Enter the URL, a username (sent as `X-Limit-U`), and a device name (sent as
@@ -37,15 +50,18 @@ Requirements:
 
 - JDK 17 or newer (the build box uses Temurin 21),
 - Android SDK with platform 36 and build-tools 34+,
-- MMD `1.0.2` installed in `~/.m2` (the `settings.gradle.kts` uses `mavenLocal()`).
+- MMD `1.0.2` in `~/.m2` for the local build (`mavenLocal()`); CI uses Maven Central.
 
 ```bash
 ./gradlew :app:assembleDebug --offline
+./gradlew :app:assembleRelease --offline
 ./gradlew :app:testDebugUnitTest --offline
-adb install -r app/build/outputs/apk/debug/app-debug.apk
+adb install -r app/build/outputs/apk/release/app-release.apk
 ```
 
-The first build may need network access unless the Gradle cache is already populated.
+The release build is signed with the shared Kompakt key from `signing/signing.keystore`
+when that gitignored file is present. Without it the release APK is unsigned and cannot
+be installed.
 
 ## Configuration
 
@@ -62,7 +78,8 @@ owntracks.tid=kt
 ```
 
 Those values become `BuildConfig` fields. Without `local.properties` the app starts with
-empty fields and asks for the URL in the UI.
+empty fields and asks for the URL in the UI. The CI release is built without
+`local.properties`, so its APK contains no private defaults.
 
 ## Permissions
 
@@ -93,6 +110,20 @@ The default interval is 5 minutes. Values from 1 to 120 minutes are accepted. Wi
 alarms granted, the watchdog can fire at the configured interval even in Doze; without
 the permission Android may defer the alarm.
 
+## Release and signing
+
+- `versionName = "0.1.0"`, tag `v0.1.0`, `versionCode = 10_000` (the same
+  `major * 10_000_000 + minor * 10_000 + patch` scheme as the other Kompakt apps).
+- The shared signing key is in the gitignored `signing/` directory. GitHub Actions
+  restores it from the repository secrets `SIGNING_KEYSTORE_BASE64`,
+  `SIGNING_STORE_PASSWORD`, `SIGNING_KEY_ALIAS`, and `SIGNING_KEY_PASSWORD`.
+- Pushing a `v*` tag runs `.github/workflows/release.yml`, verifies the signing
+  certificate, checks that `versionName` matches the tag, and attaches
+  `sokuseki-v0.1.0.apk`, `sokuseki.apk`, and their SHA-256 files to the GitHub release.
+- The expected certificate SHA-256 digest is
+  `311b5cbb24e690121d1d2df664cb879e7a88b74ffee5be87c897c04a59aa6665`, the same key
+  used by `aikotoba`, `ie`, `norikae`, and `etsuran`.
+
 ## Verified on the Kompakt
 
 Tested on a Mudita Kompakt running MuditaOS K 1.6.1 (Android 12):
@@ -108,11 +139,11 @@ Tested on a Mudita Kompakt running MuditaOS K 1.6.1 (Android 12):
 ## Scope and limitations
 
 - HTTP webhook only. MQTT and the OwnTracks Recorder `/pub` endpoint are not implemented.
-- The queue keeps the newest 20 fixes. Older points are intentionally dropped during a
-  long outage; the current position matters more than a complete history.
 - No OwnTracks region/waypoint or beacon messages.
 - Payload encryption (Home Assistant's optional libsodium key) is not implemented; use
   HTTPS or a trusted LAN.
+- The queue keeps the newest 20 fixes. Older points are intentionally dropped during a
+  long outage; the current position matters more than a complete history.
 - The webhook URL is stored in the app's private preferences. It is not committed to git.
 
 ## License

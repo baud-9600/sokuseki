@@ -1,4 +1,4 @@
-package de.asdfghasdfgh.muditracks
+package de.asdfghasdfgh.sokuseki
 
 import java.net.HttpURLConnection
 import java.net.SocketTimeoutException
@@ -39,7 +39,7 @@ class HttpSender {
                 instanceFollowRedirects = true
                 setRequestProperty("Content-Type", "application/json; charset=utf-8")
                 setRequestProperty("Accept", "application/json")
-                setRequestProperty("User-Agent", "Muditracks/${BuildConfig.VERSION_NAME} (Android)")
+                setRequestProperty("User-Agent", "Sokuseki/${BuildConfig.VERSION_NAME} (Android)")
                 // Home Assistant's HTTP mode identifies the tracker through these
                 // headers; without X-Limit-U it throws the location away.
                 setRequestProperty("X-Limit-U", config.user)

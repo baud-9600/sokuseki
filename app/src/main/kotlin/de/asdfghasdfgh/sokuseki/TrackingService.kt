@@ -1,4 +1,4 @@
-package de.asdfghasdfgh.muditracks
+package de.asdfghasdfgh.sokuseki
 
 import android.Manifest
 import android.app.Notification
@@ -432,7 +432,7 @@ class TrackingService : Service() {
         val powerManager = getSystemService(PowerManager::class.java)
         powerManager.newWakeLock(
             PowerManager.PARTIAL_WAKE_LOCK,
-            "Muditracks::location-cycle",
+            "Sokuseki::location-cycle",
         ).apply {
             setReferenceCounted(false)
             acquire(WAKE_LOCK_TIMEOUT_MS)
@@ -544,7 +544,7 @@ class TrackingService : Service() {
         )
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_location)
-            .setContentTitle("Muditracks aktiv")
+            .setContentTitle("Sokuseki aktiv")
             .setContentText(detail)
             .setStyle(NotificationCompat.BigTextStyle().bigText(detail))
             .setContentIntent(contentIntent)
@@ -593,10 +593,10 @@ class TrackingService : Service() {
         SimpleDateFormat("HH:mm", Locale.GERMANY).format(Date(millis))
 
     companion object {
-        const val ACTION_START = "de.asdfghasdfgh.muditracks.action.START"
-        const val ACTION_STOP = "de.asdfghasdfgh.muditracks.action.STOP"
-        const val ACTION_TICK = "de.asdfghasdfgh.muditracks.action.TICK"
-        const val ACTION_SEND_NOW = "de.asdfghasdfgh.muditracks.action.SEND_NOW"
+        const val ACTION_START = "de.asdfghasdfgh.sokuseki.action.START"
+        const val ACTION_STOP = "de.asdfghasdfgh.sokuseki.action.STOP"
+        const val ACTION_TICK = "de.asdfghasdfgh.sokuseki.action.TICK"
+        const val ACTION_SEND_NOW = "de.asdfghasdfgh.sokuseki.action.SEND_NOW"
 
         private const val CHANNEL_ID = "tracking"
         private const val NOTIFICATION_ID = 1001

@@ -1,4 +1,4 @@
-package de.asdfghasdfgh.muditracks
+package de.asdfghasdfgh.sokuseki
 
 import android.content.Context
 
@@ -78,7 +78,7 @@ class ConfigStore(context: Context) {
         set(value) = prefs.edit().putBoolean(KEY_ENABLED, value).apply()
 
     companion object {
-        const val PREFS_NAME = "muditracks"
+        const val PREFS_NAME = "sokuseki"
         private const val KEY_URL = "url"
         private const val KEY_USER = "user"
         private const val KEY_DEVICE = "device"

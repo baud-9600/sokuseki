@@ -1,4 +1,4 @@
-package de.asdfghasdfgh.muditracks
+package de.asdfghasdfgh.sokuseki
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

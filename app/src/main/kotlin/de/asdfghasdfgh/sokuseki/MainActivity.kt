@@ -1,4 +1,4 @@
-package de.asdfghasdfgh.muditracks
+package de.asdfghasdfgh.sokuseki
 
 import android.Manifest
 import android.app.AlarmManager
@@ -197,12 +197,12 @@ private fun TrackerScreen() {
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         TextMMD(
-            text = "Muditracks",
+            text = "Sokuseki",
             fontSize = 30.sp,
             fontWeight = FontWeight.Bold,
         )
         TextMMD(
-            text = "OwnTracks → Home Assistant",
+            text = "足跡 · OwnTracks → Home Assistant",
             fontSize = 14.sp,
         )
         TextMMD(

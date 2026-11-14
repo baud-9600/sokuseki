@@ -16,5 +16,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Muditracks"
+rootProject.name = "sokuseki"
 include(":app")

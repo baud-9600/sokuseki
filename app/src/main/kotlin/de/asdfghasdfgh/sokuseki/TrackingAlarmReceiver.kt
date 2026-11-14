@@ -1,4 +1,4 @@
-package de.asdfghasdfgh.muditracks
+package de.asdfghasdfgh.sokuseki
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -20,6 +20,6 @@ class TrackingAlarmReceiver : BroadcastReceiver() {
     }
 
     companion object {
-        const val ACTION_TICK = "de.asdfghasdfgh.muditracks.action.TICK"
+        const val ACTION_TICK = "de.asdfghasdfgh.sokuseki.action.TICK"
     }
 }
