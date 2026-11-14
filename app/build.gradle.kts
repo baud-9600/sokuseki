@@ -38,22 +38,49 @@ android {
         buildConfigField("String", "DEFAULT_TID", "\"${localString("owntracks.tid")}\"")
     }
 
-    // The shared release key of the other Kompakt apps. It lives in the gitignored
-    // signing/ directory locally and is restored from repository secrets in CI.
-    // Signing debug builds with the same key means every install can be updated later.
-    val signingPropertiesFile = rootProject.file("signing/signing.properties")
-    val realSigningConfig = if (signingPropertiesFile.isFile) {
-        val signingProperties = Properties().apply {
-            signingPropertiesFile.inputStream().use(::load)
+    // Prefer the shared key in the home directory (the one used by all other
+    // asdfghasdfgh apps). CI has no home key: it restores signing/ from repository
+    // secrets instead. Signing debug builds with the same key means every install
+    // can be updated later.
+    val homeSigningDir = File(System.getProperty("user.home"), "asdfghasdfgh-signing")
+    val homeSigningPropertiesFile = File(homeSigningDir, "asdfghasdfgh-keystore.properties")
+    val projectSigningPropertiesFile = rootProject.file("signing/signing.properties")
+
+    val realSigningConfig = when {
+        homeSigningPropertiesFile.isFile -> {
+            val signingProperties = Properties().apply {
+                homeSigningPropertiesFile.inputStream().use(::load)
+            }
+            val storeName = signingProperties.getProperty("storeFile")
+                ?: "asdfghasdfgh-release.keystore"
+            val storeFile = File(storeName).let {
+                if (it.isAbsolute) it else File(homeSigningDir, it.path)
+            }
+            if (storeFile.isFile) {
+                signingConfigs.create("real") {
+                    this.storeFile = storeFile
+                    storePassword = signingProperties.getProperty("storePassword")
+                    keyAlias = signingProperties.getProperty("keyAlias")
+                    keyPassword = signingProperties.getProperty("keyPassword")
+                }
+            } else {
+                null
+            }
         }
-        signingConfigs.create("real") {
-            storeFile = rootProject.file("signing/signing.keystore")
-            storePassword = signingProperties.getProperty("STORE_PASSWORD")
-            keyAlias = signingProperties.getProperty("KEY_ALIAS")
-            keyPassword = signingProperties.getProperty("KEY_PASSWORD")
+
+        projectSigningPropertiesFile.isFile -> {
+            val signingProperties = Properties().apply {
+                projectSigningPropertiesFile.inputStream().use(::load)
+            }
+            signingConfigs.create("real") {
+                storeFile = rootProject.file("signing/signing.keystore")
+                storePassword = signingProperties.getProperty("STORE_PASSWORD")
+                keyAlias = signingProperties.getProperty("KEY_ALIAS")
+                keyPassword = signingProperties.getProperty("KEY_PASSWORD")
+            }
         }
-    } else {
-        null
+
+        else -> null
     }
 
     buildTypes {
