@@ -18,7 +18,6 @@ import android.os.BatteryManager
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
-import android.os.SystemClock
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CancellationException
@@ -128,11 +127,18 @@ class TrackingService : Service() {
                 restartLoop(config)
             }
             !enabled -> {
-                triggerCycle(config, oneShot = true)
+                triggerCycle(config, oneShot = true, force = true)
             }
             else -> {
+                val loopWasActive = loopJob?.isActive == true
                 ensureLoop(config)
-                triggerCycle(config, oneShot = false)
+                if (loopWasActive) {
+                    triggerCycle(
+                        config,
+                        oneShot = false,
+                        force = action == ACTION_SEND_NOW,
+                    )
+                }
             }
         }
 
@@ -167,8 +173,10 @@ class TrackingService : Service() {
         isRunning = true
         StatusStore.setRunning(true)
         loopJob = scope.launch {
+            var firstCycle = true
             while (isActive) {
-                runCycle(config)
+                runCycle(config, force = firstCycle)
+                firstCycle = false
                 delay(config.intervalMinutes.coerceAtLeast(1) * 60_000L)
             }
         }
@@ -179,7 +187,7 @@ class TrackingService : Service() {
         restartLoop(config)
     }
 
-    private fun triggerCycle(config: TrackConfig, oneShot: Boolean) {
+    private fun triggerCycle(config: TrackConfig, oneShot: Boolean, force: Boolean) {
         scope.launch {
             val acquired = cycleMutex.tryLock()
             if (!acquired) {
@@ -190,7 +198,9 @@ class TrackingService : Service() {
                 return@launch
             }
             try {
-                runCycleLocked(config)
+                if (force || shouldRunNow(config)) {
+                    runCycleLocked(config)
+                }
             } finally {
                 cycleMutex.unlock()
                 if (oneShot) {
@@ -201,15 +211,29 @@ class TrackingService : Service() {
         }
     }
 
-    private suspend fun runCycle(config: TrackConfig) {
+    private suspend fun runCycle(config: TrackConfig, force: Boolean) {
         cycleMutex.withLock {
-            runCycleLocked(config)
+            if (force || shouldRunNow(config)) {
+                runCycleLocked(config)
+            }
         }
+    }
+
+    /**
+     * The in-service loop and the AlarmManager watchdog intentionally overlap. Without
+     * this guard a 5-minute interval could produce two points a few seconds apart.
+     */
+    private fun shouldRunNow(config: TrackConfig): Boolean {
+        val last = StatusStore.state.value.lastAttemptAt
+        if (last <= 0L) return true
+        val minGap = (config.intervalMinutes * 60_000L / 2).coerceAtLeast(15_000L)
+        return System.currentTimeMillis() - last >= minGap
     }
 
     private suspend fun runCycleLocked(config: TrackConfig) {
         val wakeLock = acquireWakeLock()
         try {
+            StatusStore.update { it.copy(lastAttemptAt = System.currentTimeMillis()) }
             StatusStore.log("Suche Standort …")
             val location = locate()
             if (location == null) {
@@ -237,7 +261,7 @@ class TrackingService : Service() {
 
             StatusStore.update {
                 it.copy(
-                    lastFixAt = now,
+                    lastFixAt = if (location.time > 0) location.time else now,
                     lastFixLat = location.latitude,
                     lastFixLon = location.longitude,
                     lastFixAcc = if (location.hasAccuracy()) location.accuracy else null,
@@ -258,16 +282,15 @@ class TrackingService : Service() {
                         result.message,
                     )
                 )
-            } else {
+                drainBacklog(config)
+            } else if (result.retryable) {
                 queue.add(payload)
                 StatusStore.update { it.copy(pending = queue.size()) }
                 StatusStore.log("Nicht gesendet (${result.message}) – Punkt vorgemerkt.")
-                if (!result.retryable) {
-                    StatusStore.log("Fehler ist nicht wiederholbar; alter Rückstand bleibt erhalten.")
-                }
+            } else {
+                StatusStore.log("Nicht gesendet (${result.message}) – Punkt verworfen.")
             }
 
-            drainBacklog(config)
             StatusStore.update { it.copy(pending = queue.size()) }
             updateNotification()
         } catch (e: CancellationException) {
@@ -292,9 +315,14 @@ class TrackingService : Service() {
                 StatusStore.update {
                     it.copy(lastSentAt = System.currentTimeMillis(), pending = queue.size())
                 }
-            } else {
+            } else if (result.retryable) {
                 StatusStore.log("Rückstand bleibt liegen: ${result.message}")
                 return
+            } else {
+                queue.removeFirst()
+                sent++
+                StatusStore.log("Rückstand verworfen (${result.message}).")
+                StatusStore.update { it.copy(pending = queue.size()) }
             }
         }
     }
