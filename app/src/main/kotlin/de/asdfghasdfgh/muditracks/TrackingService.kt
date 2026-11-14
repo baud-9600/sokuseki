@@ -270,6 +270,16 @@ class TrackingService : Service() {
             }
             updateNotification()
 
+            // Older queued points are sent first. That way Home Assistant ends on the
+            // current fix and never jumps back to an older position after an outage.
+            if (queue.size() > 0 && !drainBacklog(config)) {
+                queue.add(payload)
+                StatusStore.update { it.copy(pending = queue.size()) }
+                StatusStore.log("Server noch nicht erreichbar – aktueller Punkt vorgemerkt.")
+                updateNotification()
+                return
+            }
+
             val result = sender.send(config, payload)
             recordResult(result)
             if (result.success) {
@@ -282,7 +292,6 @@ class TrackingService : Service() {
                         result.message,
                     )
                 )
-                drainBacklog(config)
             } else if (result.retryable) {
                 queue.add(payload)
                 StatusStore.update { it.copy(pending = queue.size()) }
@@ -303,10 +312,13 @@ class TrackingService : Service() {
         }
     }
 
-    private fun drainBacklog(config: TrackConfig) {
+    /**
+     * @return true when the queue is empty, false when the server is still unreachable.
+     */
+    private fun drainBacklog(config: TrackConfig): Boolean {
         var sent = 0
-        while (sent < MAX_BACKLOG_PER_CYCLE) {
-            val payload = queue.peek() ?: return
+        while (true) {
+            val payload = queue.peek() ?: break
             val result = sender.send(config, payload)
             recordResult(result)
             if (result.success) {
@@ -317,14 +329,17 @@ class TrackingService : Service() {
                 }
             } else if (result.retryable) {
                 StatusStore.log("Rückstand bleibt liegen: ${result.message}")
-                return
+                return false
             } else {
                 queue.removeFirst()
-                sent++
                 StatusStore.log("Rückstand verworfen (${result.message}).")
                 StatusStore.update { it.copy(pending = queue.size()) }
             }
         }
+        if (sent > 0) {
+            StatusStore.log("$sent ältere(r) Punkt(e) nachgesendet.")
+        }
+        return true
     }
 
     private fun recordResult(result: SendResult) {
@@ -590,7 +605,6 @@ class TrackingService : Service() {
         private const val GOOD_NETWORK_ACCURACY_METERS = 150f
         private const val MAX_FIX_AGE_MS = 30 * 60_000L
         private const val WAKE_LOCK_TIMEOUT_MS = 3 * 60_000L
-        private const val MAX_BACKLOG_PER_CYCLE = 20
 
         @Volatile
         var isRunning: Boolean = false

@@ -84,17 +84,32 @@ offers shortcuts to the relevant system screens.
 3. The best recent fix is chosen from GPS, network, passive, and cached providers; a fresh
    fix is requested if the cached one is stale.
 4. The JSON payload is posted to the webhook with `X-Limit-U` / `X-Limit-D`.
-5. On failure the payload is appended to `files/pending.jsonl` and retried on the next
-   cycle. Delivery is capped so a long outage cannot create an unbounded request burst.
+5. On failure the payload is appended to `files/pending.jsonl` (the newest 20 fixes are
+   kept) and retried on the next cycle. On recovery the oldest queued fixes are sent
+   first and the current fix last, so Home Assistant never jumps back to an old position.
 6. The next alarm is scheduled.
 
 The default interval is 5 minutes. Values from 1 to 120 minutes are accepted. With exact
 alarms granted, the watchdog can fire at the configured interval even in Doze; without
 the permission Android may defer the alarm.
 
+## Verified on the Kompakt
+
+Tested on a Mudita Kompakt running MuditaOS K 1.6.1 (Android 12):
+
+- a manual send reached the real Home Assistant webhook with HTTP 200,
+- one-minute cycles continued with the screen off and with the device forced into
+  `IDLE`/deep Doze,
+- after a simulated reboot the foreground service was running again and sending,
+- after an app update (`MY_PACKAGE_REPLACED`) the service restarted on its own,
+- with Wi-Fi and mobile data disabled, two fixes were queued; after restoring the
+  network the queue drained and the next request returned HTTP 200.
+
 ## Scope and limitations
 
 - HTTP webhook only. MQTT and the OwnTracks Recorder `/pub` endpoint are not implemented.
+- The queue keeps the newest 20 fixes. Older points are intentionally dropped during a
+  long outage; the current position matters more than a complete history.
 - No OwnTracks region/waypoint or beacon messages.
 - Payload encryption (Home Assistant's optional libsodium key) is not implemented; use
   HTTPS or a trusted LAN.

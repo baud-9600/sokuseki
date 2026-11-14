@@ -8,7 +8,7 @@ import java.io.File
  */
 class PendingQueue(
     private val file: File,
-    private val maxEntries: Int = 500,
+    private val maxEntries: Int = 20,
 ) {
     private val entries = ArrayDeque<String>()
 
