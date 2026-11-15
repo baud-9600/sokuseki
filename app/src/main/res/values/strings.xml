@@ -69,7 +69,9 @@
     <string name="log_searching">Searching for location …</string>
     <string name="log_no_fix">No location fix</string>
     <string name="log_no_fix_next">No location fix – next attempt on the next alarm.</string>
-    <string name="log_sent">Sent: %1$s, %2$s (%3$s)</string>
+    <string name="log_no_fresh_fix">No fresh location fix – waiting for the next alarm.</string>
+    <string name="log_fix_too_inaccurate">Fix ignored: accuracy %1$d m (limit %2$d m).</string>
+    <string name="log_sent">Sent: %1$s, %2$s ±%3$d m via %4$s (%5$s)</string>
     <string name="log_queued_current">Server still unreachable – current point queued.</string>
     <string name="log_not_sent_queued">Not sent (%1$s) – point queued.</string>
     <string name="log_not_sent_discarded">Not sent (%1$s) – point discarded.</string>

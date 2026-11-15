@@ -26,9 +26,9 @@ android {
         minSdk = 31
         targetSdk = 31
         // The release tag packs the version: major * 10_000_000 + minor * 10_000 + patch.
-        // v0.1.0 -> 10_000.
-        versionCode = 10_000
-        versionName = "0.1.0"
+        // v0.1.1 -> 10_001.
+        versionCode = 10_001
+        versionName = "0.1.1"
 
         // Defaults for the first start. They live in the gitignored local.properties,
         // so the private Home Assistant webhook never ends up in the repository.

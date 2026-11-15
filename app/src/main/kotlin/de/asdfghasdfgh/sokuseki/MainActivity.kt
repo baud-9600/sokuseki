@@ -61,6 +61,7 @@ import com.mudita.mmd.components.text_field.TextFieldMMD
 import java.text.DateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.roundToInt
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -397,7 +398,12 @@ private fun TrackerScreen() {
         SectionTitle(stringResource(R.string.section_status))
         StatusLine(
             stringResource(R.string.status_last_fix),
-            formatTimestamp(status.lastFixAt, status.lastFixLat, status.lastFixLon),
+            formatTimestamp(
+                status.lastFixAt,
+                status.lastFixLat,
+                status.lastFixLon,
+                status.lastFixAcc,
+            ),
         )
         StatusLine(stringResource(R.string.status_last_sent), formatTimestamp(status.lastSentAt))
         StatusLine(
@@ -492,7 +498,12 @@ private fun configErrorText(context: Context, error: ConfigError): String = when
     )
 }
 
-private fun formatTimestamp(millis: Long, lat: Double? = null, lon: Double? = null): String {
+private fun formatTimestamp(
+    millis: Long,
+    lat: Double? = null,
+    lon: Double? = null,
+    accuracy: Float? = null,
+): String {
     if (millis <= 0) return "–"
     val time = DateFormat.getDateTimeInstance(
         DateFormat.SHORT,
@@ -500,7 +511,8 @@ private fun formatTimestamp(millis: Long, lat: Double? = null, lon: Double? = nu
         Locale.getDefault(),
     ).format(Date(millis))
     return if (lat != null && lon != null) {
-        "%.5f, %.5f · %s".format(Locale.US, lat, lon, time)
+        val accuracyText = accuracy?.let { " ±${it.roundToInt()} m" }.orEmpty()
+        "%.5f, %.5f%s · %s".format(Locale.US, lat, lon, accuracyText, time)
     } else {
         time
     }

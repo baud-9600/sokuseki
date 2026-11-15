@@ -290,6 +290,8 @@ class TrackingService : Service() {
                         R.string.log_sent,
                         formatCoordinate(location.latitude),
                         formatCoordinate(location.longitude),
+                        if (location.hasAccuracy()) location.accuracy.roundToInt() else 0,
+                        location.provider ?: "?",
                         resultText,
                     )
                 )
@@ -400,15 +402,36 @@ class TrackingService : Service() {
     private fun betterOf(candidates: List<Location>): Location? {
         val now = System.currentTimeMillis()
         val freshEnough = candidates.filter { now - it.time <= MAX_FIX_AGE_MS }
-        val chosen = freshEnough.minByOrNull { score(it) }
-        if (chosen != null) lastLocation = chosen
-        return chosen
+        val usable = freshEnough.filter {
+            it.hasAccuracy() && it.accuracy <= MAX_SEND_ACCURACY_METERS
+        }
+        val chosen = usable.minByOrNull { score(it) }
+        if (chosen != null) {
+            lastLocation = chosen
+            return chosen
+        }
+
+        val tooInaccurate = freshEnough
+            .filter { it.hasAccuracy() }
+            .minByOrNull { score(it) }
+        if (tooInaccurate != null) {
+            StatusStore.log(
+                getString(
+                    R.string.log_fix_too_inaccurate,
+                    tooInaccurate.accuracy.roundToInt(),
+                    MAX_SEND_ACCURACY_METERS.roundToInt(),
+                )
+            )
+        } else {
+            StatusStore.log(getString(R.string.log_no_fresh_fix))
+        }
+        return null
     }
 
     private fun score(location: Location): Double {
         val ageSeconds = ((System.currentTimeMillis() - location.time).coerceAtLeast(0L)) / 1000.0
         val accuracy = if (location.hasAccuracy()) location.accuracy.toDouble() else 500.0
-        return accuracy + ageSeconds * 0.5
+        return accuracy + ageSeconds * 2.0
     }
 
     private fun bestLastKnown(): Location? {
@@ -636,8 +659,12 @@ class TrackingService : Service() {
         private const val NOTIFICATION_ID = 1001
         private const val GPS_TIMEOUT_MS = 40_000L
         private const val NETWORK_TIMEOUT_MS = 12_000L
-        private const val GOOD_NETWORK_ACCURACY_METERS = 150f
-        private const val MAX_FIX_AGE_MS = 30 * 60_000L
+        // A network fix is only used without waiting for GPS when it is this good.
+        private const val GOOD_NETWORK_ACCURACY_METERS = 50f
+        // Stale fixes are the main reason for false "away" states at home.
+        private const val MAX_FIX_AGE_MS = 3 * 60_000L
+        // Home Assistant should not see a single 200 m cell-tower fix as a move.
+        private const val MAX_SEND_ACCURACY_METERS = 100f
         private const val WAKE_LOCK_TIMEOUT_MS = 3 * 60_000L
 
         @Volatile

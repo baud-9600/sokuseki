@@ -117,7 +117,7 @@ the permission Android may defer the alarm.
 
 ## Release and signing
 
-- `versionName = "0.1.0"`, tag `v0.1.0`, `versionCode = 10_000` (the same
+- `versionName = "0.1.1"`, tag `v0.1.1`, `versionCode = 10_001` (the same
   `major * 10_000_000 + minor * 10_000 + patch` scheme as the other Kompakt apps).
 - The shared signing key is the one in `~/asdfghasdfgh-signing/` (the same key as the
   other apps). GitHub Actions restores it from the repository secrets
@@ -125,7 +125,7 @@ the permission Android may defer the alarm.
   `SIGNING_KEY_PASSWORD`.
 - Pushing a `v*` tag runs `.github/workflows/release.yml`, verifies the signing
   certificate, checks that `versionName` matches the tag, and attaches
-  `sokuseki-v0.1.0.apk`, `sokuseki.apk`, and their SHA-256 files to the GitHub release.
+  `sokuseki-v0.1.1.apk`, `sokuseki.apk`, and their SHA-256 files to the GitHub release.
 - The expected certificate SHA-256 digest is
   `311b5cbb24e690121d1d2df664cb879e7a88b74ffee5be87c897c04a59aa6665`, the same key
   used by `aikotoba`, `ie`, `norikae`, and `etsuran`.
@@ -145,6 +145,36 @@ Tested on a Mudita Kompakt running MuditaOS K 1.6.1 (Android 12):
   `311b5cbb24e690121d1d2df664cb879e7a88b74ffee5be87c897c04a59aa6665` and installs over
   the previous release build,
 - the German and English resource sets are both present in the release APK.
+
+## False “away” at home
+
+A single inaccurate fix can be enough for Home Assistant to mark the phone as away.
+The app now protects against that in three ways:
+
+- a network fix is only used without waiting for GPS when its accuracy is 50 m or
+  better,
+- fixes older than 3 minutes are ignored,
+- fixes with an accuracy worse than 100 m are not sent.
+
+The log line for every send includes the accuracy and provider, for example
+`Gesendet: 49.43465, 8.52694 ±64 m über network (HTTP 200)`. This makes it easy to see
+whether an outlier came from GPS or from the network provider.
+
+Two Home Assistant settings are still recommended:
+
+```yaml
+owntracks:
+  max_gps_accuracy: 100
+```
+
+- `max_gps_accuracy` makes Home Assistant ignore reports that are less accurate than
+  100 m.
+- Increase the Home zone radius to about **200–250 m** if the house/garden is larger
+  than the default 100 m zone; a 180 m GPS/network drift then no longer counts as
+  leaving home.
+- If the old `org.owntracks.android` app is still installed, stop or uninstall it. It
+  uses the same `mk`/`kompakt` identification and can otherwise feed the same Home
+  Assistant tracker with a second, independent location stream.
 
 ## Scope and limitations
 

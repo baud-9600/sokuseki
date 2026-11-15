@@ -69,7 +69,9 @@
     <string name="log_searching">Suche Standort …</string>
     <string name="log_no_fix">Kein Standort-Fix</string>
     <string name="log_no_fix_next">Kein Standort-Fix – nächster Versuch beim nächsten Alarm.</string>
-    <string name="log_sent">Gesendet: %1$s, %2$s (%3$s)</string>
+    <string name="log_no_fresh_fix">Kein frischer Standort-Fix – warte auf den nächsten Alarm.</string>
+    <string name="log_fix_too_inaccurate">Fix verworfen: Genauigkeit %1$d m (Grenze %2$d m).</string>
+    <string name="log_sent">Gesendet: %1$s, %2$s ±%3$d m über %4$s (%5$s)</string>
     <string name="log_queued_current">Server noch nicht erreichbar – aktueller Punkt vorgemerkt.</string>
     <string name="log_not_sent_queued">Nicht gesendet (%1$s) – Punkt vorgemerkt.</string>
     <string name="log_not_sent_discarded">Nicht gesendet (%1$s) – Punkt verworfen.</string>
